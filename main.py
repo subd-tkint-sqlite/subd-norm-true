@@ -110,7 +110,8 @@ def changeDB():
         id = id_sel
         whatchange = f_change.get()
         if set_col != 'id':
-            cursor.execute("""Update table1 set""" + ' ' + set_col + """ = ? where id = ? """, (whatchange, id))
+            cursor.execute("""Update """ + " " + str(r_var_table.get()) + """ set """ + ' ' + set_col + """ = ? where id = ? """,
+                                               (whatchange, id))
             db.commit()
             refresh()
 
