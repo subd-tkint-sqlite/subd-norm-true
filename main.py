@@ -29,7 +29,6 @@ table = ttk.Treeview(frame_view, show='headings', selectmode="browse")  # дер
 table['columns'] = heads  # длина таблицы
 
 
-
 # заголовки столбцов и их расположение
 for header in heads:
     table.heading(header, text=header, anchor='center')
@@ -40,6 +39,32 @@ for header in heads:
 for row in back.information():
     table.insert('', END, values=row)
 table.pack(expand=YES, fill=BOTH, side=LEFT)
+
+def refresh_2():
+    heads = []
+    with connect('database.db') as db:
+        cursor = db.cursor()
+        cursor.execute('PRAGMA table_info("table2")')
+        column_names = [i[1] for i in cursor.fetchall()]
+    for row in column_names:
+        heads.append(row)
+    table = ttk.Treeview(frame_view, show='tree', selectmode="browse")  # дерево выполняющее свойство таблицы
+    table = ttk.Treeview(frame_view, show='headings', selectmode="browse")
+    table['columns'] = heads  # длина таблицы
+
+
+
+
+    # заголовки столбцов и их расположение
+    for header in heads:
+        table.heading(header, text=header, anchor='center')
+        table.column(header, anchor='center')
+
+    # добавление из бд в таблицу приложения
+    for row in back.information2():
+        table.insert('', END, values=row)
+    table.pack(expand=YES, fill=BOTH, side=LEFT)
+    refresh()
 
 
 def globaltable():
@@ -72,10 +97,15 @@ def add_table():
     heads.append(newcol)
     with connect('database.db') as db:
         cursor = db.cursor()
-        cursor.execute("""ALTER TABLE + ' '+ str(r_var_table.get()) + ADD COLUMN '%s' 'TEXT' """ % newcol)
+        cursor.execute("""ALTER TABLE """ + ' ' + str(r_var_table.get()) + ' ' + """ ADD COLUMN '%s' 'TEXT' """ % newcol)
         refresh()
 
-
+def del_table():
+    with connect('database.db') as db:
+        cursor = db.cursor()
+        print(set_col)
+        cursor.execute("""ALTER TABLE """ + ' ' + str(r_var_table.get()) + ' ' + """ DROP COLUMN """ + set_col)
+        refresh()
 
 
 
@@ -110,9 +140,12 @@ def changeDB():
         id = id_sel
         whatchange = f_change.get()
         if set_col != 'id':
-            cursor.execute("""Update table1 set""" + ' ' + set_col + """ = ? where id = ? """, (whatchange, id))
+            cursor.execute("""Update """ + " " + str(r_var_table.get()) + """ set """ + ' ' + set_col + """ = ? where id = ? """,
+                                               (whatchange, id))
             db.commit()
             refresh()
+
+
 
 
 lst_tables2 = []
@@ -120,6 +153,7 @@ for tables in back.list_tables():
     lst_tables2.append(*tables,)
 lst_tables = []
 
+#переключение между таблицами
 def menu_cascade():
     for word in lst_tables2:
         if word in lst_tables:
@@ -188,6 +222,8 @@ btn_reference.grid(row=4, column=0, sticky='w', padx=10, pady=10)
 btn_add_column = ttk.Button(frame_change, text='новая', command=add_table)
 btn_add_column.grid(row=5, column=4, columnspan=2, sticky='w', padx=10, pady=10)
 
+btn_del_column = ttk.Button(frame_change, text='удалить', command=del_table)
+btn_del_column.grid(row=5, column=5, columnspan=2, sticky='w', padx=10, pady=10)
 
 #  скроллбар
 scrollpanel = ttk.Scrollbar(frame_view, command=table.yview)
@@ -197,4 +233,5 @@ table.pack(expand=YES, fill=BOTH)
 
 window.update()
 table.update()
+
 window.mainloop()

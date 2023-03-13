@@ -5,7 +5,7 @@ from tkinter.messagebox import *
 with connect('database.db') as db:
     cursor = db.cursor()
     cursor.execute(""" CREATE TABLE IF NOT EXISTS table1 (id INTEGER PRIMARY KEY, name TEXT,  expenses TEXT )""")
-    cursor.execute(""" CREATE TABLE IF NOT EXISTS table2 (id INTEGER PRIMARY KEY, name TEXT,  expenses TEXT )""")
+    cursor.execute(""" CREATE TABLE IF NOT EXISTS table2 (id INTEGER PRIMARY KEY, expenses TEXT,  name TEXT )""")
 
 
 def list_tables():
@@ -14,6 +14,10 @@ def list_tables():
 
 def information():
     cursor.execute("SELECT * FROM table1")
+    return cursor.fetchall()
+
+def information2():
+    cursor.execute("SELECT * FROM table2")
     return cursor.fetchall()
 
 
