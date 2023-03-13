@@ -72,7 +72,7 @@ def add_table():
     heads.append(newcol)
     with connect('database.db') as db:
         cursor = db.cursor()
-        cursor.execute("""ALTER TABLE + ' '+ str(r_var_table.get()) + ADD COLUMN '%s' 'TEXT' """ % newcol)
+        cursor.execute("""ALTER TABLE """ + ' ' + str(r_var_table.get()) + ' ' + """ ADD COLUMN '%s' 'TEXT' """ % newcol)
         refresh()
 
 
