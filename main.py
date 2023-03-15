@@ -4,6 +4,18 @@ import backend as back
 from sqlite3 import *
 
 
+with connect('database.db') as db:
+    cursor = db.cursor()
+    cursor.execute(""" CREATE TABLE IF NOT EXISTS table1 (id INTEGER PRIMARY KEY, name TEXT,  expenses TEXT )""")
+
+
+def list_tables():
+    cursor.execute("""SELECT name FROM sqlite_master WHERE type = "table" """)
+    return cursor.fetchall()
+
+
+
+
 #  Главное окно
 window = Tk()
 window.title('subd')
@@ -15,12 +27,15 @@ frame_view = Frame(window, width=150, height=150, bg='white')  # блок для
 frame_change.place(relx=0, rely=0, relwidth=1, relheight=1)
 frame_view.place(relx=0, rely=0.5, relwidth=1, relheight=0.5)
 
+r_var_table = StringVar()
+r_var_table.set('table1')
+
 # порядок элементов
 heads = []
 
 with connect('database.db') as db:
     cursor = db.cursor()
-    cursor.execute('PRAGMA table_info("table1")')
+    cursor.execute('PRAGMA table_info('+str(r_var_table.get())+')')
     column_names = [i[1] for i in cursor.fetchall()]
 for row in column_names:
     heads.append(row)
@@ -29,6 +44,29 @@ table = ttk.Treeview(frame_view, show='headings', selectmode="browse")  # дер
 table['columns'] = heads  # длина таблицы
 
 
+#переменная хранит Boolean от RadioButton menu
+
+
+lst_tables = []
+#переключение между таблицами
+def menu_cascade():
+    lst_tables2 = []
+    for tables in list_tables():
+        lst_tables2.append(*tables, )
+    print(lst_tables2)
+    for word in lst_tables2:
+        if word in lst_tables:
+            print('if')
+            pass
+        else:
+            lst_tables.append(word)
+            filemenu.add_radiobutton(label=word, value=word, variable=r_var_table, command=up_frame)
+            print('else')
+
+def information():
+    cursor.execute("SELECT * FROM " + str(r_var_table.get()))
+    return cursor.fetchall()
+
 # заголовки столбцов и их расположение
 for header in heads:
     table.heading(header, text=header, anchor='center')
@@ -36,39 +74,24 @@ for header in heads:
 
 
 # добавление из бд в таблицу приложения
-for row in back.information():
+for row in information():
     table.insert('', END, values=row)
 table.pack(expand=YES, fill=BOTH, side=LEFT)
 
-def refresh_2():
-    heads = []
+
+table_name = ttk.Entry(frame_change)
+table_name.grid(row=0, column=5, sticky='w', padx=10, pady=10)
+
+def new_table():
+    tb = table_name.get()
     with connect('database.db') as db:
         cursor = db.cursor()
-        cursor.execute('PRAGMA table_info("table2")')
-        column_names = [i[1] for i in cursor.fetchall()]
-    for row in column_names:
-        heads.append(row)
-    table = ttk.Treeview(frame_view, show='tree', selectmode="browse")  # дерево выполняющее свойство таблицы
-    table = ttk.Treeview(frame_view, show='headings', selectmode="browse")
-    table['columns'] = heads  # длина таблицы
+        cursor.execute("""CREATE TABLE IF NOT EXISTS"""+' '+tb+' '+"""(id INTEGER PRIMARY KEY)""")
 
 
 
-
-    # заголовки столбцов и их расположение
-    for header in heads:
-        table.heading(header, text=header, anchor='center')
-        table.column(header, anchor='center')
-
-    # добавление из бд в таблицу приложения
-    for row in back.information2():
-        table.insert('', END, values=row)
-    table.pack(expand=YES, fill=BOTH, side=LEFT)
-    refresh()
-
-
-def globaltable():
-    print(r_var_table.get())
+btn_new_table = ttk.Button(frame_change, text='новая таблица', command=new_table)
+btn_new_table.grid(row=5, column=6, columnspan=2, sticky='w', padx=10, pady=10)
 
 # функция обновления таблицы
 def refresh():
@@ -77,6 +100,30 @@ def refresh():
         cursor.execute(''' SELECT * FROM  ''' + str(r_var_table.get()))
         [table.delete(i) for i in table.get_children()]
         [table.insert('', 'end', values=row) for row in cursor.fetchall()]
+
+
+def up_frame():
+    all_item_frame = [f for f in frame_view.children]
+    for item in all_item_frame:
+        frame_view.nametowidget(item).destroy()
+    add_frame()
+
+
+def add_frame():
+
+    table = ttk.Treeview(frame_view, show='headings', selectmode="browse")  # дерево выполняющее свойство таблицы
+    table['columns'] = heads
+    for header in heads:
+        table.column(header, anchor='center')
+        table.heading(header, text=header, anchor='center')
+    for row in information():
+        table.insert('', END, values=row)
+    table.pack(expand=YES, fill=BOTH, side=LEFT)
+
+    scrollpanel = ttk.Scrollbar(frame_view, command=table.yview)
+    table.configure(yscrollcommand=scrollpanel.set)
+    scrollpanel.pack(side=RIGHT, fill=Y)
+    table.pack(expand=YES, fill=BOTH)
 
 
 # функция обработчика событий по нажатию лкм
@@ -98,14 +145,14 @@ def add_table():
     with connect('database.db') as db:
         cursor = db.cursor()
         cursor.execute("""ALTER TABLE """ + ' ' + str(r_var_table.get()) + ' ' + """ ADD COLUMN '%s' 'TEXT' """ % newcol)
-        refresh()
+        up_frame()
 
 def del_table():
     with connect('database.db') as db:
         cursor = db.cursor()
-        print(set_col)
+
         cursor.execute("""ALTER TABLE """ + ' ' + str(r_var_table.get()) + ' ' + """ DROP COLUMN """ + set_col)
-        refresh()
+        up_frame()
 
 
 
@@ -148,30 +195,14 @@ def changeDB():
 
 
 
-lst_tables2 = []
-for tables in back.list_tables():
-    lst_tables2.append(*tables,)
-lst_tables = []
 
-#переключение между таблицами
-def menu_cascade():
-    for word in lst_tables2:
-        if word in lst_tables:
-            print('ne')
-            continue
-        else:
-            lst_tables.append(word)
-            filemenu.add_radiobutton(label=word, value=word, variable=r_var_table, command=refresh)
-    print(lst_tables)
-    print(lst_tables2)
+
 
 # контекстное меню
 mainmenu = Menu(window)
 window.config(menu=mainmenu)
 
-#переменная хранит Boolean от RadioButton menu
-r_var_table = StringVar()
-r_var_table.set(0)
+
 
 filemenu = Menu(mainmenu, tearoff=0, postcommand=menu_cascade)
 mainmenu.add_cascade(label="Таблицы",
