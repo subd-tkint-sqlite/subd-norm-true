@@ -27,6 +27,7 @@ frame_view = Frame(window, width=150, height=150, bg='white')  # блок для
 frame_change.place(relx=0, rely=0, relwidth=1, relheight=1)
 frame_view.place(relx=0, rely=0.5, relwidth=1, relheight=0.5)
 
+#переменная хранит Boolean от RadioButton menu
 r_var_table = StringVar()
 r_var_table.set('table1')
 
@@ -44,7 +45,7 @@ table = ttk.Treeview(frame_view, show='headings', selectmode="browse")  # дер
 table['columns'] = heads  # длина таблицы
 
 
-#переменная хранит Boolean от RadioButton menu
+
 
 
 lst_tables = []
@@ -100,7 +101,7 @@ def refresh():
         cursor.execute(''' SELECT * FROM  ''' + str(r_var_table.get()))
         [table.delete(i) for i in table.get_children()]
         [table.insert('', 'end', values=row) for row in cursor.fetchall()]
-
+        db.commit()
 
 def up_frame():
     all_item_frame = [f for f in frame_view.children]
@@ -110,7 +111,13 @@ def up_frame():
 
 
 def add_frame():
-
+    heads.clear()
+    with connect('database.db') as db:
+        cursor = db.cursor()
+        cursor.execute('PRAGMA table_info(' + str(r_var_table.get()) + ')')
+        column_names = [i[1] for i in cursor.fetchall()]
+    for row in column_names:
+        heads.append(row)
     table = ttk.Treeview(frame_view, show='headings', selectmode="browse")  # дерево выполняющее свойство таблицы
     table['columns'] = heads
     for header in heads:
@@ -145,13 +152,17 @@ def add_table():
     with connect('database.db') as db:
         cursor = db.cursor()
         cursor.execute("""ALTER TABLE """ + ' ' + str(r_var_table.get()) + ' ' + """ ADD COLUMN '%s' 'TEXT' """ % newcol)
+        db.commit()
         up_frame()
+
+
 
 def del_table():
     with connect('database.db') as db:
         cursor = db.cursor()
 
         cursor.execute("""ALTER TABLE """ + ' ' + str(r_var_table.get()) + ' ' + """ DROP COLUMN """ + set_col)
+        db.commit()
         up_frame()
 
 
@@ -167,7 +178,7 @@ def form_submit():
         query = """ INSERT INTO """ + ' '+ str(r_var_table.get()) + """(name, expenses) VALUES (?, ?)"""
         cursor.execute(query, insert_inf)
         db.commit()
-        refresh()
+        up_frame()
 
 
 # функция удалить
@@ -177,7 +188,7 @@ def delete():
         id = id_sel
         cursor.execute('''DELETE FROM  ''' + ' ' + str(r_var_table.get()) + ''' WHERE id = ?''', (id,))
         db.commit()
-        refresh()
+        up_frame()
 
 
 # функция изменения дб
